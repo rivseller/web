@@ -1,0 +1,285 @@
+ {source}
+
+ <?php
+
+$user_now=$user->id;
+
+$name = strip_tags(trim($_REQUEST['name']));
+
+$name1 = JFactory::getUser($name)->name;
+
+$garbage_cnt = strip_tags(trim($_REQUEST['garbage_cnt']));
+
+$garbage_type = strip_tags(trim($_REQUEST['garbage_type']));
+
+$garbage_mesure = strip_tags(trim($_REQUEST['garbage_mesure']));
+
+$user_main = $user->id;
+
+$user_slave = strip_tags(trim($_REQUEST['users']));
+
+$competency = strip_tags(trim($_REQUEST['comp']));
+
+$value = strip_tags(trim($_REQUEST['value']));
+
+$freq = strip_tags(trim($_REQUEST['freq']));
+
+$value_date = time();
+
+echo "Вы пользователь $user_main оценили пользователя $user_slave по компетенции $competency. Поставили оценку $value, частоту $freq. Дата оценки $value_date<br>";
+
+
+ 
+
+#подключение sql matrix и установка кодировки
+
+require 'scripts/connect_matrix.php';
+
+mysql_query("SET NAMES 'utf8");
+mysql_query("SET CHARACTER SET 'utf8'");
+
+#запись данных с формы в БД
+
+$insert_data = "INSERT INTO competency_v (user_main, user_slave, competency, value, freq, value_date) VALUES ($user_main, $user_slave, $competency, $value, $freq, $value_date)";
+mysql_query($insert_data);
+
+ 
+
+$competency_dict=mysql_query("SELECT `value`,`name` FROM `competency_dict` WHERE 1
+order by name") or die(mysql_error());
+
+$value_dict=mysql_query("SELECT `value`,`name` FROM `value_dict` WHERE 1
+limit 0,30") or die(mysql_error());
+
+$freq_dict=mysql_query("SELECT `value`,`name` FROM `freq_dict` WHERE 1
+limit 0,30") or die(mysql_error());
+
+$parent_dict=mysql_query("SELECT parent_name FROM competency_dict WHERE 1 group by parent_name order by parent_name") or die(mysql_error());
+
+$arr_competency_dict=mysql_fetch_array($competency_dict);
+
+$arr_value_dict=mysql_fetch_array($value_dict);
+
+$arr_freq_dict=mysql_fetch_array($freq_dict);
+
+$arr_parent_dict=mysql_fetch_array($parent_dict);
+
+ 
+
+#форма 
+
+$teachers = JAccess::getUsersByGroup(2); //change number in the brackets
+ #foreach($teachers as $user_id) {
+ #$user = JFactory::getUser($user_id);
+
+ #echo "$user->id";
+
+ #echo "$user->name<br>";
+#}
+
+?>
+
+<form method="post" action='<?php echo "https://rtportal.ru/index.php/stati/187?name=$name" ; ?>'>
+Кого вы хотите оценить? 
+
+<select name="users" value="список пользователей">
+
+<?php
+
+echo "<option value=$user_main>Оценить себя</option>";
+
+foreach($teachers as $user_id) {
+ $user = JFactory::getUser($user_id);
+
+ echo "<option value=$user->id>$user->name</option>";}
+
+?>
+</select>
+
+ 
+
+<br>Область знаний
+
+<select name="skill" value="область знаний">
+
+<?php
+        do
+            {echo "<option value=".$arr_parent_dict['parent_name'].">".$arr_parent_dict['parent_name']."</option>";
+
+            }
+        while ($arr_parent_dict = mysql_fetch_array($parent_dict));
+
+?>
+</select>
+
+ 
+
+<br>Выберете компетенцию
+
+<select name="comp" value="список компетенций">
+
+<?php
+        do
+            {echo "<option value=".$arr_competency_dict['value'].">".$arr_competency_dict['name']."</option>";
+
+            }
+        while ($arr_competency_dict = mysql_fetch_array($competency_dict));
+
+?>
+</select>
+
+<br>Оцените уровень знаний
+
+<select name="value" value="оценка">
+
+<?php
+do
+{echo "<option value=".$arr_value_dict['value'].">".$arr_value_dict['name']."</option>";
+}
+while ($arr_value_dict = mysql_fetch_array($value_dict));
+?>
+</select>
+
+<br>Оцените частоту применения навыка
+
+<select name="freq" value="частота">
+
+<?php
+do
+{echo "<option value=".$arr_freq_dict['value'].">".$arr_freq_dict['name']."</option>";
+}
+while ($arr_freq_dict = mysql_fetch_array($freq_dict));
+?>
+</select>
+
+<br>
+
+<input type="submit" value="Отправить"/>
+</form>
+
+<?php
+
+#вывод последних транзакций matrix
+
+$last_tran_m=mysql_query("SELECT * FROM `competency_v`
+WHERE 1
+order by value_date desc limit 0,30") or die(mysql_error());
+
+$arr_tran_m=mysql_fetch_array($last_tran_m);
+
+    echo "<TABLE BORDER align='center' id='myTable' class='table_sort'>
+        <p><b>Последние 30 транзакций: </b></p>
+        <TR>
+        <TD ALIGN=CENTER><b>оценивающий пользователь</b></TD>
+        <TD ALIGN=CENTER><b>оцениваемый пользователь</b></TD>
+        <TD ALIGN=CENTER><b>оцениваемая компетенция</b></TD>
+        <TD ALIGN=CENTER><b>оценка по работе с инструментом</b></TD>
+        <TD ALIGN=CENTER><b>оценка частоты работы с инструментом</b></TD>
+        <TD ALIGN=CENTER><b>дата проставления оценки</b></TD>
+        </TR>";
+        do
+            {
+                printf("<TR>
+                    <TD ALIGN=CENTER>".$arr_tran_m['user_main']."</TD>
+                    <TD ALIGN=CENTER>".$arr_tran_m['user_slave']."</TD>
+                    <TD ALIGN=CENTER>".$arr_tran_m['competency']."</TD>
+                    <TD ALIGN=CENTER>".$arr_tran_m['value']."</TD>
+                    <TD ALIGN=CENTER>".$arr_tran_m['freq']."</TD>
+                    <TD ALIGN=CENTER>".date('d/m/Y g:i A', $arr_tran_m['value_date'])."</TD>
+                </TR>");
+            }
+        while ($arr_tran_m = mysql_fetch_array($last_tran_m));
+        
+    echo "</table><br>";
+
+#средняя оценка по последним оценкам пользователей. персональная матрица компетенции
+
+$user_now_name = JFactory::getUser($user_now)->name;
+
+$pers_m=mysql_query("select a.user_slave, a.competency comp, avg(a.value) val, avg(a.freq) freq, a.value_date dt, cd.name cnm, count(a.user_main) ucnt 
+from competency_v a, competency_dict cd 
+where value_date = (select max(value_date) from competency_v b where a.user_main = b.user_main and a.competency = b.competency) 
+and user_slave = $user_now 
+and a.competency=cd.value 
+group by a.competency 
+order by cd.name") or die(mysql_error());
+
+$arr_pers_m=mysql_fetch_array($pers_m);
+
+  echo "<TABLE BORDER align='center' id='myTable' class='table_sort'>
+<p><b>Матрица компетенций для $user_now_name: </b></p>
+<TR>
+<TD ALIGN=CENTER><b>компетенция</b></TD>
+<TD ALIGN=CENTER><b>оценка по работе с инструментом</b></TD>
+<TD ALIGN=CENTER><b>оценка частоты работы с инструментом</b></TD>
+<TD ALIGN=CENTER><b>дата последней оценки компетенции</b></TD>
+<TD ALIGN=CENTER><b>количество людей оценивших ваш навык</b></TD>
+</TR>";
+
+        do
+            {
+                printf("<TR>
+                    <TD ALIGN=CENTER>".$arr_pers_m['cnm']."</TD>
+                    <TD ALIGN=CENTER>".$arr_pers_m['val']."</TD>
+                    <TD ALIGN=CENTER>".$arr_pers_m['freq']."</TD>
+                    <TD ALIGN=CENTER>".date('d/m/Y g:i A', $arr_pers_m['dt'])."</TD>
+
+                    <TD ALIGN=CENTER>".$arr_pers_m['ucnt']."</TD>
+                </TR>");
+            }
+        while ($arr_pers_m = mysql_fetch_array($pers_m));
+        
+    echo "</table><br>";
+
+?>
+
+ 
+
+<?php $x="Пётр,Василий,Сергей,Октавиан"; ?>
+
+<select id = "sex">
+<option value="x">Зверев</option>
+<option value="m" selected>Мужчина</option>
+<option value="f">Женщина</option>
+</select>
+<select id = "names"><!-- Этот селект будем наполнять значениями -->
+</select>
+
+ 
+
+<script>
+var dataObject = {
+"m":"<?php echo $x;?>",
+"f": ",Ирина,Светлана,Марина,Евгения",
+"x": "Гламур,Звезда,Шоумен,Куафёр"
+};
+
+makeRelation = (function () {
+function change(slave, data){
+var x, dataArray, option;
+slave.innerHTML = "";
+if (!(this.value in data)){
+return false;
+}
+dataArray = data[this.value].split(",");
+for(x = 0; x < dataArray.length; x++) {
+option = document.createElement("option");
+option.value = String(x);
+option.innerHTML = dataArray[x];
+slave.appendChild(option);
+}
+}
+return function (master, slave, data) {
+master.onchange = function () {
+change.call(this, slave, data);
+}
+master.onchange();
+}
+})();
+makeRelation(gid("sex"), gid("names"), dataObject); // Использование
+function gid(txt){
+return document.getElementById(txt);
+}
+</script>
+
+{/source}
