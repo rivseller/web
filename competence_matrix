@@ -8,17 +8,13 @@ $name = strip_tags(trim($_REQUEST['name']));
 
 $name1 = JFactory::getUser($name)->name;
 
-$garbage_cnt = strip_tags(trim($_REQUEST['garbage_cnt']));
-
-$garbage_type = strip_tags(trim($_REQUEST['garbage_type']));
-
-$garbage_mesure = strip_tags(trim($_REQUEST['garbage_mesure']));
-
 $user_main = $user->id;
 
 $user_slave = strip_tags(trim($_REQUEST['users']));
 
-$competency = strip_tags(trim($_REQUEST['comp']));
+$competency = strip_tags(trim($_REQUEST['competence']));
+
+$parent_name = strip_tags(trim($_REQUEST['skill']));
 
 $value = strip_tags(trim($_REQUEST['value']));
 
@@ -40,13 +36,10 @@ mysql_query("SET CHARACTER SET 'utf8'");
 
 #запись данных с формы в БД
 
-$insert_data = "INSERT INTO competency_v (user_main, user_slave, competency, value, freq, value_date) VALUES ($user_main, $user_slave, $competency, $value, $freq, $value_date)";
+$insert_data = "INSERT INTO competency_v (user_main, user_slave, competency, value, freq, value_date, parent_name) VALUES ($user_main, $user_slave, $competency, $value, $freq, $value_date, '$parent_name')";
 mysql_query($insert_data);
 
  
-
-$competency_dict=mysql_query("SELECT `value`,`name` FROM `competency_dict` WHERE 1
-order by name") or die(mysql_error());
 
 $value_dict=mysql_query("SELECT `value`,`name` FROM `value_dict` WHERE 1
 limit 0,30") or die(mysql_error());
@@ -54,15 +47,9 @@ limit 0,30") or die(mysql_error());
 $freq_dict=mysql_query("SELECT `value`,`name` FROM `freq_dict` WHERE 1
 limit 0,30") or die(mysql_error());
 
-$parent_dict=mysql_query("SELECT parent_name FROM competency_dict WHERE 1 group by parent_name order by parent_name") or die(mysql_error());
-
-$arr_competency_dict=mysql_fetch_array($competency_dict);
-
 $arr_value_dict=mysql_fetch_array($value_dict);
 
 $arr_freq_dict=mysql_fetch_array($freq_dict);
-
-$arr_parent_dict=mysql_fetch_array($parent_dict);
 
  
 
@@ -82,9 +69,11 @@ $teachers = JAccess::getUsersByGroup(2); //change number in the brackets
 <form method="post" action='<?php echo "https://rtportal.ru/index.php/stati/187?name=$name" ; ?>'>
 Кого вы хотите оценить? 
 
-<select name="users" value="список пользователей">
+<select name="users" value="список пользователей" onchange="javascript:selectSkill()">
 
 <?php
+
+echo "<option value='' selected></option>";
 
 echo "<option value=$user_main>Оценить себя</option>";
 
@@ -98,37 +87,13 @@ foreach($teachers as $user_id) {
 
  
 
-<br>Область знаний
+<div name="selectDataSkill"></div>
 
-<select name="skill" value="область знаний">
-
-<?php
-        do
-            {echo "<option value=".$arr_parent_dict['parent_name'].">".$arr_parent_dict['parent_name']."</option>";
-
-            }
-        while ($arr_parent_dict = mysql_fetch_array($parent_dict));
-
-?>
-</select>
+<div name="selectDataCompetence"></div> 
 
  
 
-<br>Выберете компетенцию
-
-<select name="comp" value="список компетенций">
-
-<?php
-        do
-            {echo "<option value=".$arr_competency_dict['value'].">".$arr_competency_dict['name']."</option>";
-
-            }
-        while ($arr_competency_dict = mysql_fetch_array($competency_dict));
-
-?>
-</select>
-
-<br>Оцените уровень знаний
+Оцените уровень знаний
 
 <select name="value" value="оценка">
 
@@ -233,53 +198,37 @@ $arr_pers_m=mysql_fetch_array($pers_m);
 
 ?>
 
- 
-
-<?php $x="Пётр,Василий,Сергей,Октавиан"; ?>
-
-<select id = "sex">
-<option value="x">Зверев</option>
-<option value="m" selected>Мужчина</option>
-<option value="f">Женщина</option>
-</select>
-<select id = "names"><!-- Этот селект будем наполнять значениями -->
-</select>
-
- 
+  
 
 <script>
-var dataObject = {
-"m":"<?php echo $x;?>",
-"f": ",Ирина,Светлана,Марина,Евгения",
-"x": "Гламур,Звезда,Шоумен,Куафёр"
+
+function selectSkill(){
+var id_user = jQuery('select[name="users"]').val();
+if(!id_user){
+jQuery('div[name="selectDataSkill"]').html('');
+jQuery('div[name="selectDataCompetence"]').html('');
+}else{
+jQuery.ajax({
+type: "POST",
+url: "https://rtportal.ru/scripts/ajax_lists.php",
+data: { action: 'showSkillForInsert', id_user: id_user },
+cache: false,
+success: function(responce){ jQuery('div[name="selectDataSkill"]').html(responce); }
+});
+};
 };
 
-makeRelation = (function () {
-function change(slave, data){
-var x, dataArray, option;
-slave.innerHTML = "";
-if (!(this.value in data)){
-return false;
-}
-dataArray = data[this.value].split(",");
-for(x = 0; x < dataArray.length; x++) {
-option = document.createElement("option");
-option.value = String(x);
-option.innerHTML = dataArray[x];
-slave.appendChild(option);
-}
-}
-return function (master, slave, data) {
-master.onchange = function () {
-change.call(this, slave, data);
-}
-master.onchange();
-}
-})();
-makeRelation(gid("sex"), gid("names"), dataObject); // Использование
-function gid(txt){
-return document.getElementById(txt);
-}
+function selectCompetence(){
+var id_skill = jQuery('select[name="skill"]').val();
+jQuery.ajax({
+type: "POST",
+url: "https://rtportal.ru/scripts/ajax_lists.php",
+data: { action: 'showCompetenceForInsert', id_skill: id_skill },
+cache: false,
+success: function(responce){ jQuery('div[name="selectDataCompetence"]').html(responce); }
+});
+};
+
 </script>
 
 {/source}
