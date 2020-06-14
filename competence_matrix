@@ -22,10 +22,7 @@ $freq = strip_tags(trim($_REQUEST['freq']));
 
 $value_date = time();
 
-echo "Вы пользователь $user_main оценили пользователя $user_slave по компетенции $competency. Поставили оценку $value, частоту $freq. Дата оценки $value_date<br>";
-
-
- 
+#echo "Вы пользователь $user_main оценили пользователя $user_slave по компетенции $competency. Поставили оценку $value, частоту $freq. Дата оценки $value_date<br>";
 
 #подключение sql matrix и установка кодировки
 
@@ -124,38 +121,59 @@ while ($arr_freq_dict = mysql_fetch_array($freq_dict));
 
 <?php
 
-#вывод последних транзакций matrix
 
-$last_tran_m=mysql_query("SELECT * FROM `competency_v`
-WHERE 1
-order by value_date desc limit 0,30") or die(mysql_error());
 
-$arr_tran_m=mysql_fetch_array($last_tran_m);
+#отрисовка справочников по частоте и оценке
 
-    echo "<TABLE BORDER align='center' id='myTable' class='table_sort'>
-        <p><b>Последние 30 транзакций: </b></p>
-        <TR>
-        <TD ALIGN=CENTER><b>оценивающий пользователь</b></TD>
-        <TD ALIGN=CENTER><b>оцениваемый пользователь</b></TD>
-        <TD ALIGN=CENTER><b>оцениваемая компетенция</b></TD>
-        <TD ALIGN=CENTER><b>оценка по работе с инструментом</b></TD>
-        <TD ALIGN=CENTER><b>оценка частоты работы с инструментом</b></TD>
-        <TD ALIGN=CENTER><b>дата проставления оценки</b></TD>
-        </TR>";
+$freq_dict=mysql_query("SELECT value, name FROM freq_dict WHERE 1") or die(mysql_error());
+
+$arr_freq_dict=mysql_fetch_array($freq_dict);
+
+$value_dict=mysql_query("SELECT value, name FROM value_dict WHERE 1") or die(mysql_error());
+
+$arr_value_dict=mysql_fetch_array($value_dict);
+
+  echo "<TABLE BORDER align='center' id='freq_dict' class='table_sort'>
+<p><b>Справочник частоты применения навыка: </b></p>
+<TR>
+<TD ALIGN=CENTER><b>оценка</b></TD>
+<TD ALIGN=CENTER><b>описание</b></TD>
+</TR>";
+
         do
             {
                 printf("<TR>
-                    <TD ALIGN=CENTER>".$arr_tran_m['user_main']."</TD>
-                    <TD ALIGN=CENTER>".$arr_tran_m['user_slave']."</TD>
-                    <TD ALIGN=CENTER>".$arr_tran_m['competency']."</TD>
-                    <TD ALIGN=CENTER>".$arr_tran_m['value']."</TD>
-                    <TD ALIGN=CENTER>".$arr_tran_m['freq']."</TD>
-                    <TD ALIGN=CENTER>".date('d/m/Y g:i A', $arr_tran_m['value_date'])."</TD>
+                    <TD ALIGN=CENTER>".$arr_freq_dict['value']."</TD>
+                    <TD ALIGN=CENTER>".$arr_freq_dict['name']."</TD>
+
                 </TR>");
             }
-        while ($arr_tran_m = mysql_fetch_array($last_tran_m));
+        while ($arr_freq_dict = mysql_fetch_array($freq_dict));
         
     echo "</table><br>";
+
+ 
+
+  echo "<TABLE BORDER align='center' id='value_dict' class='table_sort'>
+<p><b>Справочник уровня знаний: </b></p>
+<TR>
+<TD ALIGN=CENTER><b>оценка</b></TD>
+<TD ALIGN=CENTER><b>описание</b></TD>
+</TR>";
+
+        do
+            {
+                printf("<TR>
+                    <TD ALIGN=CENTER>".$arr_value_dict['value']."</TD>
+                    <TD ALIGN=CENTER>".$arr_value_dict['name']."</TD>
+
+                </TR>");
+            }
+        while ($arr_value_dict = mysql_fetch_array($value_dict));
+        
+    echo "</table><br>";
+
+ 
 
 #средняя оценка по последним оценкам пользователей. персональная матрица компетенции
 
@@ -195,6 +213,79 @@ $arr_pers_m=mysql_fetch_array($pers_m);
         while ($arr_pers_m = mysql_fetch_array($pers_m));
         
     echo "</table><br>";
+
+ 
+
+/*последние 30 оценок пользователя*/
+
+$last_tran_u=mysql_query("SELECT v.user_slave sl, v.competency, v.value v, v.freq f, v.value_date dt, c.name cn
+FROM competency_v v, competency_dict c
+WHERE v.user_main=$user_main and v.competency=c.value
+order by v.value_date desc limit 0,30") or die(mysql_error());
+
+$arr_tran_u=mysql_fetch_array($last_tran_u);
+
+    echo "<TABLE BORDER align='center' id='myTable' class='table_sort'>
+        <p><b>Последние 30 оценок, выставленных вами: </b></p>
+        <TR>
+        <TD ALIGN=CENTER><b>оцениваемый пользователь</b></TD>
+        <TD ALIGN=CENTER><b>оцениваемая компетенция</b></TD>
+        <TD ALIGN=CENTER><b>оценка по работе с инструментом</b></TD>
+        <TD ALIGN=CENTER><b>оценка частоты работы с инструментом</b></TD>
+        <TD ALIGN=CENTER><b>дата проставления оценки</b></TD>
+        </TR>";
+        do
+            {
+                printf("<TR>
+                    <TD ALIGN=CENTER>".JFactory::getUser($arr_tran_u['sl'])->name."</TD>
+                    <TD ALIGN=CENTER>".$arr_tran_u['cn']."</TD>
+                    <TD ALIGN=CENTER>".$arr_tran_u['v']."</TD>
+                    <TD ALIGN=CENTER>".$arr_tran_u['f']."</TD>
+                    <TD ALIGN=CENTER>".date('d/m/Y g:i A', $arr_tran_u['dt'])."</TD>
+                </TR>");
+            }
+        while ($arr_tran_u = mysql_fetch_array($last_tran_u));
+        
+    echo "</table><br>";
+
+ 
+
+ 
+
+#вывод последних транзакций matrix
+
+$last_tran_m=mysql_query("SELECT * FROM `competency_v`
+WHERE 1
+order by value_date desc limit 0,30") or die(mysql_error());
+
+$arr_tran_m=mysql_fetch_array($last_tran_m);
+
+    echo "<TABLE BORDER align='center' id='myTable' class='table_sort'>
+        <p><b>Последние 30 транзакций: </b></p>
+        <TR>
+        <TD ALIGN=CENTER><b>оценивающий пользователь</b></TD>
+        <TD ALIGN=CENTER><b>оцениваемый пользователь</b></TD>
+        <TD ALIGN=CENTER><b>оцениваемая компетенция</b></TD>
+        <TD ALIGN=CENTER><b>оценка по работе с инструментом</b></TD>
+        <TD ALIGN=CENTER><b>оценка частоты работы с инструментом</b></TD>
+        <TD ALIGN=CENTER><b>дата проставления оценки</b></TD>
+        </TR>";
+        do
+            {
+                printf("<TR>
+                    <TD ALIGN=CENTER>".$arr_tran_m['user_main']."</TD>
+                    <TD ALIGN=CENTER>".$arr_tran_m['user_slave']."</TD>
+                    <TD ALIGN=CENTER>".$arr_tran_m['competency']."</TD>
+                    <TD ALIGN=CENTER>".$arr_tran_m['value']."</TD>
+                    <TD ALIGN=CENTER>".$arr_tran_m['freq']."</TD>
+                    <TD ALIGN=CENTER>".date('d/m/Y g:i A', $arr_tran_m['value_date'])."</TD>
+                </TR>");
+            }
+        while ($arr_tran_m = mysql_fetch_array($last_tran_m));
+        
+    echo "</table><br>";
+
+ 
 
 ?>
 
