@@ -121,7 +121,48 @@ while ($arr_freq_dict = mysql_fetch_array($freq_dict));
 
 <?php
 
+ 
 
+ 
+
+#средняя оценка по последним оценкам пользователей. персональная матрица компетенции
+
+$user_now_name = JFactory::getUser($user_now)->name;
+
+$pers_m=mysql_query("select a.user_slave, a.competency comp, avg(a.value) val, avg(a.freq) freq, a.value_date dt, cd.name cnm, count(a.user_main) ucnt 
+from competency_v a, competency_dict cd 
+where value_date = (select max(value_date) from competency_v b where a.user_main = b.user_main and a.competency = b.competency) 
+and user_slave = $user_now 
+and a.competency=cd.value 
+group by a.competency 
+order by cd.name") or die(mysql_error());
+
+$arr_pers_m=mysql_fetch_array($pers_m);
+
+  echo "<TABLE BORDER align='center' id='myTable' class='table_sort'>
+<p><b>Матрица компетенций для $user_now_name: </b></p>
+<TR>
+<TD ALIGN=CENTER><b>компетенция</b></TD>
+<TD ALIGN=CENTER><b>оценка по работе с инструментом</b></TD>
+<TD ALIGN=CENTER><b>оценка частоты работы с инструментом</b></TD>
+<TD ALIGN=CENTER><b>дата последней оценки компетенции</b></TD>
+<TD ALIGN=CENTER><b>количество людей оценивших ваш навык</b></TD>
+</TR>";
+
+        do
+            {
+                printf("<TR>
+                    <TD ALIGN=CENTER>".$arr_pers_m['cnm']."</TD>
+                    <TD ALIGN=CENTER>".$arr_pers_m['val']."</TD>
+                    <TD ALIGN=CENTER>".$arr_pers_m['freq']."</TD>
+                    <TD ALIGN=CENTER>".date('d/m/Y g:i A', $arr_pers_m['dt'])."</TD>
+
+                    <TD ALIGN=CENTER>".$arr_pers_m['ucnt']."</TD>
+                </TR>");
+            }
+        while ($arr_pers_m = mysql_fetch_array($pers_m));
+        
+    echo "</table><br>";
 
 #отрисовка справочников по частоте и оценке
 
@@ -170,47 +211,6 @@ $arr_value_dict=mysql_fetch_array($value_dict);
                 </TR>");
             }
         while ($arr_value_dict = mysql_fetch_array($value_dict));
-        
-    echo "</table><br>";
-
- 
-
-#средняя оценка по последним оценкам пользователей. персональная матрица компетенции
-
-$user_now_name = JFactory::getUser($user_now)->name;
-
-$pers_m=mysql_query("select a.user_slave, a.competency comp, avg(a.value) val, avg(a.freq) freq, a.value_date dt, cd.name cnm, count(a.user_main) ucnt 
-from competency_v a, competency_dict cd 
-where value_date = (select max(value_date) from competency_v b where a.user_main = b.user_main and a.competency = b.competency) 
-and user_slave = $user_now 
-and a.competency=cd.value 
-group by a.competency 
-order by cd.name") or die(mysql_error());
-
-$arr_pers_m=mysql_fetch_array($pers_m);
-
-  echo "<TABLE BORDER align='center' id='myTable' class='table_sort'>
-<p><b>Матрица компетенций для $user_now_name: </b></p>
-<TR>
-<TD ALIGN=CENTER><b>компетенция</b></TD>
-<TD ALIGN=CENTER><b>оценка по работе с инструментом</b></TD>
-<TD ALIGN=CENTER><b>оценка частоты работы с инструментом</b></TD>
-<TD ALIGN=CENTER><b>дата последней оценки компетенции</b></TD>
-<TD ALIGN=CENTER><b>количество людей оценивших ваш навык</b></TD>
-</TR>";
-
-        do
-            {
-                printf("<TR>
-                    <TD ALIGN=CENTER>".$arr_pers_m['cnm']."</TD>
-                    <TD ALIGN=CENTER>".$arr_pers_m['val']."</TD>
-                    <TD ALIGN=CENTER>".$arr_pers_m['freq']."</TD>
-                    <TD ALIGN=CENTER>".date('d/m/Y g:i A', $arr_pers_m['dt'])."</TD>
-
-                    <TD ALIGN=CENTER>".$arr_pers_m['ucnt']."</TD>
-                </TR>");
-            }
-        while ($arr_pers_m = mysql_fetch_array($pers_m));
         
     echo "</table><br>";
 
@@ -323,3 +323,5 @@ success: function(responce){ jQuery('div[name="selectDataCompetence"]').html(res
 </script>
 
 {/source}
+
+TOP по компетенциям
