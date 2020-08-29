@@ -24,9 +24,13 @@ success: function(responce){ jQuery('div[name="selectDataSkill"]').html(responce
 
 <?php
 
-#получение выбранной компетенции
+header('Access-Control-Allow-Origin: *');
+
+#получение переменных
 
 $parent_name = strip_tags(trim($_REQUEST['skill']));
+
+ 
 
  
 
@@ -37,12 +41,12 @@ require 'scripts/connect_matrix.php';
 mysql_query("SET NAMES 'utf8");
 mysql_query("SET CHARACTER SET 'utf8'");
 
-$top=mysql_query("select a.user_slave u_top, a.competency comp, a.parent_name comp_p, avg(a.value) val, avg(a.freq) freq, a.value_date dt, cd.name cnm, count(a.user_main) ucnt 
+$top=mysql_query("select a.user_slave u_top, a.competency comp, a.parent_name comp_p, avg(a.value) val, avg(a.freq) freq, max(a.value_date) dt, cd.name cnm, count(a.user_main) ucnt 
 from competency_v a, competency_dict cd 
-where value_date = (select max(value_date) from competency_v b where a.user_main = b.user_main and a.competency = b.competency) 
+where 1=1 
 and a.competency=cd.value 
 and a.parent_name='$parent_name'
-group by a.competency, a.user_slave 
+group by a.user_slave, a.parent_name
 order by val desc, ucnt desc") or die(mysql_error());
 
 $arr_top=mysql_fetch_array($top);
@@ -50,14 +54,14 @@ $arr_top=mysql_fetch_array($top);
 $inow=1;
 
 echo "<TABLE BORDER align='center' class='table_sort'>
-<p><b>TOP по компетенции: </b></p>
+<p><b>TOP по компетенции $parent_name: </b></p>
 <TR>
 
 <TD ALIGN=CENTER><b>№ в рейтинге</b></TD>
 <TD ALIGN=CENTER><b>пользователь</b></TD>
 <TD ALIGN=CENTER><b>компетенция</b></TD>
 <TD ALIGN=CENTER><b>средняя оценка</b></TD>
-<TD ALIGN=CENTER><b>количество оценивших</b></TD>
+<TD ALIGN=CENTER><b>количество оценок</b></TD>
 </TR>";
 
         do
@@ -76,7 +80,7 @@ echo "<TABLE BORDER align='center' class='table_sort'>
         
     echo "</table><br>";
 
-?> 
+ ?>
 
 {/source}
 
