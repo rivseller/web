@@ -2,6 +2,8 @@
 
  <?php
 
+header('Access-Control-Allow-Origin: *');
+
 $user_now=$user->id;
 
 $name = strip_tags(trim($_REQUEST['name']));
@@ -52,8 +54,8 @@ $arr_freq_dict=mysql_fetch_array($freq_dict);
 
 #форма 
 
-$teachers = JAccess::getUsersByGroup(2); //change number in the brackets
- #foreach($teachers as $user_id) {
+$risktech = JAccess::getUsersByGroup(12); //change number in the brackets
+ #foreach($risktech as $user_id) {
  #$user = JFactory::getUser($user_id);
 
  #echo "$user->id";
@@ -74,7 +76,7 @@ echo "<option value='' selected></option>";
 
 echo "<option value=$user_main>Оценить себя</option>";
 
-foreach($teachers as $user_id) {
+foreach($risktech as $user_id) {
  $user = JFactory::getUser($user_id);
 
  echo "<option value=$user->id>$user->name</option>";}
@@ -254,7 +256,7 @@ $arr_tran_u=mysql_fetch_array($last_tran_u);
 
 #вывод последних транзакций matrix
 
-$last_tran_m=mysql_query("SELECT * FROM `competency_v`
+/*$last_tran_m=mysql_query("SELECT * FROM `competency_v`
 WHERE 1
 order by value_date desc limit 0,30") or die(mysql_error());
 
@@ -283,7 +285,7 @@ $arr_tran_m=mysql_fetch_array($last_tran_m);
             }
         while ($arr_tran_m = mysql_fetch_array($last_tran_m));
         
-    echo "</table><br>";
+    echo "</table><br>";*/
 
  
 
