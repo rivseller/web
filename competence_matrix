@@ -2,6 +2,8 @@
 
  <?php
 
+/*объявление и получение переменных*/
+
 header('Access-Control-Allow-Origin: *');
 
 $user_now=$user->id;
@@ -24,7 +26,30 @@ $freq = strip_tags(trim($_REQUEST['freq']));
 
 $value_date = time();
 
+$competency_arr = strip_tags(trim($_REQUEST['competency_arr']));
+
 #echo "Вы пользователь $user_main оценили пользователя $user_slave по компетенции $competency. Поставили оценку $value, частоту $freq. Дата оценки $value_date<br>";
+
+/*формируем массив из строки полученных компетенций*/
+
+$competency_arr2=explode(" ", $competency_arr);
+
+/*для каждого элемента массива компетенций в цикле формируем строку для инсерта в бд*/
+foreach ($competency_arr2 as $key => $value) {
+
+/*получаем переменные с оценкой и частотой, отправленные из элементов select в ajax_lists.php*/
+$v=value.$value;
+$f=freq.$value;
+$v1 = strip_tags(trim($_REQUEST[$v]));
+$f1 = strip_tags(trim($_REQUEST[$f]));
+
+/*формируем строку для инсерта в бд*/
+#echo "строка инсерта ($user_main, $user_slave, $value, $v1, $f1, $value_date, '$parent_name')<br>";
+$ins=$ins."($user_main, $user_slave, $value, $v1, $f1, $value_date, '$parent_name'), ";
+}
+/*убираем два последних символа (последствия цикла)*/
+$ins=substr($ins, 0, -2);
+#echo $ins;
 
 #подключение sql matrix и установка кодировки
 
@@ -35,7 +60,7 @@ mysql_query("SET CHARACTER SET 'utf8'");
 
 #запись данных с формы в БД
 
-$insert_data = "INSERT INTO competency_v (user_main, user_slave, competency, value, freq, value_date, parent_name) VALUES ($user_main, $user_slave, $competency, $value, $freq, $value_date, '$parent_name')";
+$insert_data = "INSERT INTO competency_v (user_main, user_slave, competency, value, freq, value_date, parent_name) VALUES $ins";
 mysql_query($insert_data);
 
  
@@ -90,40 +115,14 @@ foreach($risktech as $user_id) {
 
 <div name="selectDataCompetence"></div> 
 
- 
-
-Оцените уровень знаний
-
-<select name="value" value="оценка">
-
-<?php
-do
-{echo "<option value=".$arr_value_dict['value'].">".$arr_value_dict['name']."</option>";
-}
-while ($arr_value_dict = mysql_fetch_array($value_dict));
-?>
-</select>
-
-<br>Оцените частоту применения навыка
-
-<select name="freq" value="частота">
-
-<?php
-do
-{echo "<option value=".$arr_freq_dict['value'].">".$arr_freq_dict['name']."</option>";
-}
-while ($arr_freq_dict = mysql_fetch_array($freq_dict));
-?>
-</select>
-
 <br>
+
+ 
 
 <input type="submit" value="Отправить"/>
 </form>
 
 <?php
-
- 
 
  
 
