@@ -41,13 +41,7 @@ require 'scripts/connect_matrix.php';
 mysql_query("SET NAMES 'utf8");
 mysql_query("SET CHARACTER SET 'utf8'");
 
-$top=mysql_query("select a.user_slave u_top, a.competency comp, a.parent_name comp_p, avg(a.value) val, avg(a.freq) freq, max(a.value_date) dt, cd.name cnm, count(a.user_main) ucnt 
-from competency_v a, competency_dict cd 
-where 1=1 
-and a.competency=cd.value 
-and a.parent_name='$parent_name'
-group by a.user_slave, a.parent_name
-order by val desc, ucnt desc") or die(mysql_error());
+$top=mysql_query("select cv.user_slave u_top, cv.parent_name comp_p, avg(cv.value) val, avg(cv.freq) freq, count(*) ucnt from ( select cd.name as competency, cv.value, cv.freq, cv.value_date, cv.user_main, cv.user_slave, cv.parent_name from competency_v cv inner join ( select cv.competency, cv.user_main, cv.user_slave, max(cv.value_date) max_date from competency_v cv group by cv.competency, cv.user_main, cv.user_slave order by cv.value_date desc ) maxDate on ( cv.competency= maxDate.competency and cv.user_main = maxDate.user_main and cv.user_slave = maxDate.user_slave and cv.value_date = maxDate.max_date ) inner join competency_dict cd on cv.competency = cd.value ) cv where parent_name = '$parent_name' group by cv.parent_name, cv.user_slave order by val desc") or die(mysql_error());
 
 $arr_top=mysql_fetch_array($top);
 
@@ -61,6 +55,8 @@ echo "<TABLE BORDER align='center' class='table_sort'>
 <TD ALIGN=CENTER><b>пользователь</b></TD>
 <TD ALIGN=CENTER><b>компетенция</b></TD>
 <TD ALIGN=CENTER><b>средняя оценка</b></TD>
+
+<TD ALIGN=CENTER><b>средняя частота</b></TD>
 <TD ALIGN=CENTER><b>количество оценок</b></TD>
 </TR>";
 
@@ -72,6 +68,8 @@ echo "<TABLE BORDER align='center' class='table_sort'>
 <TD ALIGN=CENTER>".JFactory::getUser($arr_top['u_top'])->name."</TD>
 <TD ALIGN=CENTER>".$arr_top['comp_p']."</TD>
 <TD ALIGN=CENTER>".$arr_top['val']."</TD>
+
+<TD ALIGN=CENTER>".$arr_top['freq']."</TD>
 <TD ALIGN=CENTER>".$arr_top['ucnt']."</TD>
 
                 </TR>");
