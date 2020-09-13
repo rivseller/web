@@ -1,4 +1,5 @@
  {source}
+ {source}
 
  <?php
 
@@ -91,7 +92,7 @@ $risktech = JAccess::getUsersByGroup(12); //change number in the brackets
 ?>
 
 <form method="post" action='<?php echo "https://rtportal.ru/index.php/stati/187?name=$name" ; ?>'>
-Кого вы хотите оценить? 
+Кого Вы хотите оценить? 
 
 <select name="users" value="список пользователей" onchange="javascript:selectSkill()">
 
@@ -130,13 +131,7 @@ foreach($risktech as $user_id) {
 
 $user_now_name = JFactory::getUser($user_now)->name;
 
-$pers_m=mysql_query("select a.user_slave, a.competency comp, avg(a.value) val, avg(a.freq) freq, a.value_date dt, cd.name cnm, count(a.user_main) ucnt 
-from competency_v a, competency_dict cd 
-where value_date = (select max(value_date) from competency_v b where a.user_main = b.user_main and a.competency = b.competency) 
-and user_slave = $user_now 
-and a.competency=cd.value 
-group by a.competency 
-order by cd.name") or die(mysql_error());
+$pers_m=mysql_query("select cv.competency cnm, avg(cv.value) val, avg(cv.freq) freq from ( select cd.name as competency, cv.value, cv.freq, cv.value_date, cv.user_main from competency_v cv inner join ( select cv.competency, cv.user_main, cv.user_slave, max(cv.value_date) max_date from competency_v cv where cv.user_slave = $user_now group by cv.competency, cv.user_main, cv.user_slave order by cv.value_date desc ) maxDate on ( cv.competency = maxDate.competency and cv.user_main = maxDate.user_main and cv.user_slave = maxDate.user_slave and cv.value_date = maxDate.max_date ) inner join competency_dict cd on cv.competency = cd.value ) cv group by cv.competency order by cv.competency") or die(mysql_error());
 
 $arr_pers_m=mysql_fetch_array($pers_m);
 
@@ -144,10 +139,8 @@ $arr_pers_m=mysql_fetch_array($pers_m);
 <p><b>Матрица компетенций для $user_now_name: </b></p>
 <TR>
 <TD ALIGN=CENTER><b>компетенция</b></TD>
-<TD ALIGN=CENTER><b>оценка по работе с инструментом</b></TD>
-<TD ALIGN=CENTER><b>оценка частоты работы с инструментом</b></TD>
-<TD ALIGN=CENTER><b>дата последней оценки компетенции</b></TD>
-<TD ALIGN=CENTER><b>количество людей оценивших ваш навык</b></TD>
+<TD ALIGN=CENTER><b>оценка по работе с инструментом (max 4)</b></TD>
+<TD ALIGN=CENTER><b>оценка частоты работы с инструментом (max 4)</b></TD>
 </TR>";
 
         do
@@ -156,9 +149,6 @@ $arr_pers_m=mysql_fetch_array($pers_m);
                     <TD ALIGN=CENTER>".$arr_pers_m['cnm']."</TD>
                     <TD ALIGN=CENTER>".$arr_pers_m['val']."</TD>
                     <TD ALIGN=CENTER>".$arr_pers_m['freq']."</TD>
-                    <TD ALIGN=CENTER>".date('d/m/Y g:i A', $arr_pers_m['dt'])."</TD>
-
-                    <TD ALIGN=CENTER>".$arr_pers_m['ucnt']."</TD>
                 </TR>");
             }
         while ($arr_pers_m = mysql_fetch_array($pers_m));
@@ -215,7 +205,7 @@ $arr_value_dict=mysql_fetch_array($value_dict);
         
     echo "</table><br>";
 
- 
+echo "</table><br>";
 
 /*последние 30 оценок пользователя*/
 
